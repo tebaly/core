@@ -59,7 +59,7 @@ final class SerializerContextBuilder implements SerializerContextBuilderInterfac
 
         $serializerContext = $request->attributes->get('_api_serializer_context', []);
         $context = $resourceMetadata->getTypedOperationAttribute($operationType, $attributes[$operationKey], $key, [], true);
-        $context = array_merge($serializerContext, $context);
+        $context = array_merge_recursive($context, $serializerContext);
         $context['operation_type'] = $operationType;
         $context[$operationKey] = $attributes[$operationKey];
 
