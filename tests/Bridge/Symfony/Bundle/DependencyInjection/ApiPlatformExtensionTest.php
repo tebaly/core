@@ -862,6 +862,7 @@ class ApiPlatformExtensionTest extends TestCase
             'api_platform.defaults' => ['attributes' => []],
             'api_platform.enable_entrypoint' => true,
             'api_platform.enable_docs' => true,
+            'api_platform.url_generation_strategy' => 1,
         ];
 
         $pagination = [
@@ -967,6 +968,7 @@ class ApiPlatformExtensionTest extends TestCase
             'api_platform.serializer.group_filter',
             'api_platform.serializer.normalizer.item',
             'api_platform.serializer.property_filter',
+            'api_platform.serializer.uuid_denormalizer',
             'api_platform.serializer_locator',
             'api_platform.subresource_data_provider',
             'api_platform.subresource_operation_factory',
@@ -1028,6 +1030,11 @@ class ApiPlatformExtensionTest extends TestCase
         if (method_exists(ContainerBuilder::class, 'removeBindings')) {
             $containerBuilderProphecy->removeBindings(Argument::type('string'))->will(function () {});
         }
+
+        $containerBuilderProphecy->getDefinition(Argument::type('string'))
+            ->willReturn($this->prophesize(Definition::class)->reveal());
+        $containerBuilderProphecy->getAlias(Argument::type('string'))
+            ->willReturn($this->prophesize(Alias::class)->reveal());
 
         return $containerBuilderProphecy;
     }
@@ -1391,6 +1398,11 @@ class ApiPlatformExtensionTest extends TestCase
         $containerBuilderProphecy->getDefinition('api_platform.doctrine_mongodb.odm.listener.mercure.publish')->willReturn($definitionDummy);
         $containerBuilderProphecy->getDefinition('api_platform.graphql.subscription.mercure_iri_generator')->willReturn($definitionDummy);
         $this->childDefinitionProphecy->setPublic(true)->will(function () {});
+
+        $containerBuilderProphecy->getDefinition(Argument::type('string'))
+            ->willReturn($this->prophesize(Definition::class)->reveal());
+        $containerBuilderProphecy->getAlias(Argument::type('string'))
+            ->willReturn($this->prophesize(Alias::class)->reveal());
 
         return $containerBuilderProphecy;
     }
