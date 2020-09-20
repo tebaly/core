@@ -30,7 +30,9 @@ use ApiPlatform\Core\DataPersister\DataPersisterInterface;
 use ApiPlatform\Core\DataProvider\CollectionDataProviderInterface;
 use ApiPlatform\Core\DataProvider\ItemDataProviderInterface;
 use ApiPlatform\Core\DataProvider\SubresourceDataProviderInterface;
+use ApiPlatform\Core\DataTransformer\DataTransformerInitializerInterface;
 use ApiPlatform\Core\DataTransformer\DataTransformerInterface;
+use ApiPlatform\Core\GraphQl\Error\ErrorHandlerInterface;
 use ApiPlatform\Core\GraphQl\Resolver\MutationResolverInterface;
 use ApiPlatform\Core\GraphQl\Resolver\QueryCollectionResolverInterface;
 use ApiPlatform\Core\GraphQl\Resolver\QueryItemResolverInterface;
@@ -52,6 +54,7 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpClient\HttpClientTrait;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
+use Symfony\Component\Uid\AbstractUid;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Yaml\Yaml;
 
@@ -166,6 +169,10 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
 
         if (class_exists(Uuid::class)) {
             $loader->load('ramsey_uuid.xml');
+        }
+
+        if (class_exists(AbstractUid::class)) {
+            $loader->load('symfony_uid.xml');
         }
 
         $container->setParameter('api_platform.enable_entrypoint', $config['enable_entrypoint']);
@@ -393,6 +400,7 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
         $container->setParameter('api_platform.oauth.flow', $config['oauth']['flow']);
         $container->setParameter('api_platform.oauth.tokenUrl', $config['oauth']['tokenUrl']);
         $container->setParameter('api_platform.oauth.authorizationUrl', $config['oauth']['authorizationUrl']);
+        $container->setParameter('api_platform.oauth.refreshUrl', $config['oauth']['refreshUrl']);
         $container->setParameter('api_platform.oauth.scopes', $config['oauth']['scopes']);
     }
 
@@ -409,6 +417,7 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
 
         $loader->load('json_schema.xml');
         $loader->load('swagger.xml');
+        $loader->load('openapi.xml');
         $loader->load('swagger-ui.xml');
 
         if (!$config['enable_swagger_ui'] && !$config['enable_re_doc']) {
@@ -492,6 +501,8 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
             ->addTag('api_platform.graphql.mutation_resolver');
         $container->registerForAutoconfiguration(GraphQlTypeInterface::class)
             ->addTag('api_platform.graphql.type');
+        $container->registerForAutoconfiguration(ErrorHandlerInterface::class)
+            ->addTag('api_platform.graphql.error_handler');
     }
 
     private function registerLegacyBundlesConfiguration(ContainerBuilder $container, array $config, XmlFileLoader $loader): void
@@ -706,6 +717,9 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
     private function registerDataTransformerConfiguration(ContainerBuilder $container): void
     {
         $container->registerForAutoconfiguration(DataTransformerInterface::class)
+            ->addTag('api_platform.data_transformer');
+
+        $container->registerForAutoconfiguration(DataTransformerInitializerInterface::class)
             ->addTag('api_platform.data_transformer');
     }
 
