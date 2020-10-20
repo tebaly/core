@@ -316,9 +316,9 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
                     continue;
                 }
             }
-            $result = $this->setResourcesPath($dirname, $container, $config);
+            $result[] = $this->setResourcesPath($dirname, $container, $config);
         }
-        return $result;
+        return array_flatten($result);
     }
 
     private function setResourcesPath($dirname, ContainerBuilder $container, array $config): array
