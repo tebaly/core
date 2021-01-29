@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Core\Bridge\Symfony\Routing\Loader;
 
+use ApiPlatform\Core\Api\IdentifiersExtractorInterface;
 use ApiPlatform\Core\Api\OperationType;
 use ApiPlatform\Core\Bridge\Symfony\Routing\RouteNameGenerator;
 use ApiPlatform\Core\Exception\InvalidResourceException;
@@ -29,15 +30,18 @@ final class ResourceLoader extends Loader
     private $resourceMetadataFactory;
     private $operationPathResolver;
     private $container;
+    private $identifiersExtractor;
 
     public function __construct(
         ResourceMetadataFactoryInterface $resourceMetadataFactory,
         OperationPathResolverInterface $operationPathResolver,
-        ContainerInterface $container
+        ContainerInterface $container,
+        IdentifiersExtractorInterface $identifiersExtractor = null
     ) {
         $this->resourceMetadataFactory = $resourceMetadataFactory;
         $this->operationPathResolver = $operationPathResolver;
         $this->container = $container;
+        $this->identifiersExtractor = $identifiersExtractor;
     }
 
     /**
@@ -111,8 +115,14 @@ final class ResourceLoader extends Loader
             }
         }
 
-        $operation['identifiers'] = (array) ($operation['identifiers'] ?? $resourceMetadata->getAttribute('identifiers', $this->identifiersExtractor ? $this->identifiersExtractor->getIdentifiersFromResourceClass($resourceClass) : ['id']));
-        $operation['has_composite_identifier'] = \count($operation['identifiers']) > 1 ? $resourceMetadata->getAttribute('composite_identifier', true) : false;
+        $operation['identifiers'] = (array) ($operation['identifiers']
+            ?? $resourceMetadata->getAttribute('identifiers', $this->identifiersExtractor
+                ? $this->identifiersExtractor->getIdentifiersFromResourceClass($resourceClass)
+                : ['id'])
+        );
+        $operation['has_composite_identifier'] = \count($operation['identifiers']) > 1
+            ? $resourceMetadata->getAttribute('composite_identifier', true)
+            : false;
         $path = trim(trim($resourceMetadata->getAttribute('route_prefix', '')), '/');
         $path .= $this->operationPathResolver->resolveOperationPath(
             $resourceShortName,
