@@ -88,8 +88,9 @@ final class ResourceLoader extends Loader
 
         if (isset($operation['route_name'])) {
             if (!isset($operation['method'])) {
-                @trigger_error(sprintf('Not setting the "method" attribute is deprecated and will not be supported anymore in API Platform 3.0, set it for the %s operation "%s" of the class "%s".', OperationType::COLLECTION === $operationType ? 'collection' : 'item', $operationName, $resourceClass), E_USER_DEPRECATED);
+                @trigger_error(sprintf('Not setting the "method" attribute is deprecated and will not be supported anymore in API Platform 3.0, set it for the %s operation "%s" of the class "%s".', OperationType::COLLECTION === $operationType ? 'collection' : 'item', $operationName, $resourceClass), \E_USER_DEPRECATED);
             }
+
             return;
         }
 
@@ -110,10 +111,9 @@ final class ResourceLoader extends Loader
             }
         }
 
-        $path = trim(
-            trim($resourceMetadata->getAttribute('route_prefix', '')),
-            '/'
-        );
+        $operation['identifiers'] = (array) ($operation['identifiers'] ?? $resourceMetadata->getAttribute('identifiers', $this->identifiersExtractor ? $this->identifiersExtractor->getIdentifiersFromResourceClass($resourceClass) : ['id']));
+        $operation['has_composite_identifier'] = \count($operation['identifiers']) > 1 ? $resourceMetadata->getAttribute('composite_identifier', true) : false;
+        $path = trim(trim($resourceMetadata->getAttribute('route_prefix', '')), '/');
         $path .= $this->operationPathResolver->resolveOperationPath(
             $resourceShortName,
             $operation,
@@ -126,7 +126,10 @@ final class ResourceLoader extends Loader
             [
                 '_controller' => $controller,
                 '_format' => null,
+                '_stateless' => $operation['stateless'],
                 '_api_resource_class' => $resourceClass,
+                '_api_identifiers' => $operation['identifiers'],
+                '_api_has_composite_identifier' => $operation['has_composite_identifier'],
                 sprintf('_api_%s_operation_name', $operationType) => $operationName,
             ] + ($operation['defaults'] ?? []),
             $operation['requirements'] ?? [],

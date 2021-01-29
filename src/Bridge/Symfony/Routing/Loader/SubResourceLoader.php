@@ -45,33 +45,37 @@ final class SubResourceLoader extends Loader
             if (null === $controller) {
                 $controller = self::DEFAULT_ACTION_PATTERN.'get_subresource';
 
-                if (!$this->container->has($controller)) {
-                    throw new RuntimeException(sprintf('There is no builtin action for the %s %s operation. You need to define the controller yourself.', OperationType::SUBRESOURCE, 'GET'));
+                    if (!$this->container->has($controller)) {
+                        throw new RuntimeException(sprintf('There is no builtin action for the %s %s operation. You need to define the controller yourself.', OperationType::SUBRESOURCE, 'GET'));
+                    }
                 }
-            }
 
-            $routeCollection->add($operation['route_name'], new Route(
-                $operation['path'],
-                [
-                    '_controller' => $controller,
-                    '_format' => null,
-                    '_api_resource_class' => $operation['resource_class'],
-                    '_api_subresource_operation_name' => $operation['route_name'],
-                    '_api_subresource_context' => [
-                        'property' => $operation['property'],
-                        'identifiers' => $operation['identifiers'],
-                        'collection' => $operation['collection'],
-                        'operationId' => $operationId,
-                    ],
-                ] + ($operation['defaults'] ?? []),
-                $operation['requirements'] ?? [],
-                $operation['options'] ?? [],
-                $operation['host'] ?? '',
-                $operation['schemes'] ?? [],
-                ['GET'],
-                $operation['condition'] ?? ''
-            ));
-        }
+                $routeCollection->add($operation['route_name'], new Route(
+                    $operation['path'],
+                    [
+                        '_controller' => $controller,
+                        '_format' => null,
+//                        '_stateless' => $operation['stateless'] ?? $resourceMetadata->getAttribute('stateless'),
+                        '_stateless' => $operation['stateless'],
+                        '_api_resource_class' => $operation['resource_class'],
+                        '_api_identifiers' => $operation['identifiers'],
+                        '_api_has_composite_identifier' => false,
+                        '_api_subresource_operation_name' => $operation['route_name'],
+                        '_api_subresource_context' => [
+                            'property' => $operation['property'],
+                            'identifiers' => $operation['identifiers'],
+                            'collection' => $operation['collection'],
+                            'operationId' => $operationId,
+                        ],
+                    ] + ($operation['defaults'] ?? []),
+                    $operation['requirements'] ?? [],
+                    $operation['options'] ?? [],
+                    $operation['host'] ?? '',
+                    $operation['schemes'] ?? [],
+                    ['GET'],
+                    $operation['condition'] ?? ''
+                ));
+            }
 
         return $routeCollection;
     }
