@@ -1,5 +1,64 @@
 # Changelog
 
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## [2.6.0](https://github.com/tebaly/core/compare/v2.5.5...v2.6.0) (2021-01-29)
+
+
+### Features
+
+* Ability to configure sources ([599e55e](https://github.com/tebaly/core/commit/599e55e1dcd3f362142be5a61567062bdac37fab)), closes [#3539](https://github.com/tebaly/core/issues/3539)
+* add ApiFilter attribute ([12dca8d](https://github.com/tebaly/core/commit/12dca8d56f5b395eebfd43c4568ea29431a60260))
+* add ApiProperty PHP 8 attribute ([11dafa5](https://github.com/tebaly/core/commit/11dafa507e2d43f87c6d83b1ea1eeddc8ef7a184))
+* add ApiResource PHP 8 attribute ([3f4bd56](https://github.com/tebaly/core/commit/3f4bd56cfbf01aa9bb8cad1bc18d69b843184534))
+* add ApiSubresource attribute ([#3869](https://github.com/tebaly/core/issues/3869)) ([74d8eed](https://github.com/tebaly/core/commit/74d8eed8d5114ea12087d0ea8c5b722093d43c6a))
+* allow Doctrine Inflector 2.0 ([8fa7fe4](https://github.com/tebaly/core/commit/8fa7fe4a7c53d1b6e89211c77c5f402d66233262))
+* bump JS deps ([df91438](https://github.com/tebaly/core/commit/df91438b22e31cbfd6400dda1f8191ad09020509))
+* bump JS deps ([32d5e8c](https://github.com/tebaly/core/commit/32d5e8c9ba6bdf3e39c629c3661cb5d96f826d0b))
+* Bundle/Path resource route loader for prefix/rewrite prefix ([89987ae](https://github.com/tebaly/core/commit/89987aeb70d4100c30eb65e4dd1c68b48f520a85)), closes [#3539](https://github.com/tebaly/core/issues/3539)
+* CookieJar on Client ([#3418](https://github.com/tebaly/core/issues/3418)) ([887d707](https://github.com/tebaly/core/commit/887d7077910d7ad6006709db14b03ac83666b9f5))
+* DirectoryLoader - recursive loading resources ([8c474ea](https://github.com/tebaly/core/commit/8c474ea3557032ddfe2e29eea4d798d907e3c821)), closes [#3539](https://github.com/tebaly/core/issues/3539)
+* Draft. New route loaders. Refactor `ApiLoader` ([b3d063f](https://github.com/tebaly/core/commit/b3d063f205d9de77773ad6207a32ec2b79bc1792)), closes [#3539](https://github.com/tebaly/core/issues/3539)
+* improves iri_only implementation ([#3454](https://github.com/tebaly/core/issues/3454)) ([1c7c26d](https://github.com/tebaly/core/commit/1c7c26d0e8f505e493fa31397255d2de2c5dce13)), closes [Issue-#3275](https://github.com/tebaly/Issue-/issues/3275)
+* remove template pull request ([4d4ee37](https://github.com/tebaly/core/commit/4d4ee373956e75ea2f56d48148dbce533d5e5498))
+
+
+### Bug Fixes
+
+*  [#3945](https://github.com/tebaly/core/issues/3945) ([#3957](https://github.com/tebaly/core/issues/3957)) ([513d8be](https://github.com/tebaly/core/commit/513d8bec65c6ed8c77e21a631c9747f66f0510ed))
+* add additionalProperties (false) to the generated JSON schema ([#3804](https://github.com/tebaly/core/issues/3804)) ([1ef4176](https://github.com/tebaly/core/commit/1ef4176611e57aafb4295bd3fe2baaa6f98a3ac9))
+* add base Hydra properties to collection items definition in JSON Schema ([#3803](https://github.com/tebaly/core/issues/3803)) ([f07b2f6](https://github.com/tebaly/core/commit/f07b2f6390581562eeb740a81fd1daf42d03c15a))
+* add prefix to subresources and operations ([#3956](https://github.com/tebaly/core/issues/3956)) ([785403f](https://github.com/tebaly/core/commit/785403f3e4e1c164f3d817257b0ccc90ff53d95b))
+* Allow objects without properties ([#3544](https://github.com/tebaly/core/issues/3544)) ([d5916f2](https://github.com/tebaly/core/commit/d5916f265151b5bc0c27ee922eac87d0eeb05475))
+* api xml ([f60f0e1](https://github.com/tebaly/core/commit/f60f0e137484efe9f92830d574e6f274fbebcfe7))
+* api xml DirectoryLoader ([bb6ad54](https://github.com/tebaly/core/commit/bb6ad54127d001b34002b9456050fce0c9cf6b05))
+* ApiResource attribute ([f9ae34b](https://github.com/tebaly/core/commit/f9ae34b7a914f26062796760dff636d1d2d16aa4))
+* better PHPUnit version detection ([a573432](https://github.com/tebaly/core/commit/a573432e990b5009270779dc7ca1a4d197b69e25))
+* Bundles Resources array result. multi array flatten ([333d45e](https://github.com/tebaly/core/commit/333d45e9159e030b8977e3f205548cb84b1718e8))
+* defaults when using attributes ([#3978](https://github.com/tebaly/core/issues/3978)) ([40c42cd](https://github.com/tebaly/core/commit/40c42cddbf2060c799dded2fcedf97b616617cd3))
+* fix tests ([#3688](https://github.com/tebaly/core/issues/3688)) ([158338b](https://github.com/tebaly/core/commit/158338b3011ca3f1d27cb48ae449b04d682d05db))
+* groups ([d2a4c0a](https://github.com/tebaly/core/commit/d2a4c0ac923dc6b2914ae6e578b2243dda35b0c6))
+* manage JSON Schema nullability ([#3817](https://github.com/tebaly/core/issues/3817)) ([8a62553](https://github.com/tebaly/core/commit/8a62553f5bea9d8d4bbaec68862e6fe758fd52ac))
+* mercure multiple topic publishing ([#3921](https://github.com/tebaly/core/issues/3921)) ([fa99626](https://github.com/tebaly/core/commit/fa99626a56948a7cfc34bd1748f6992de3a3929c))
+* merge 2.6 ([9f0d597](https://github.com/tebaly/core/commit/9f0d59745f05d0bcb285f912cb7f69709eec2869))
+* merge loaders ([757c3ea](https://github.com/tebaly/core/commit/757c3ea42e46a9283e15a71b3944871c74e254b7))
+* no flatten ([bde648e](https://github.com/tebaly/core/commit/bde648e80db878bfdabcce0d59121017ff319317))
+* only display hydra:next when the item total is strictly greater than the number of items per page ([#3967](https://github.com/tebaly/core/issues/3967)) ([9cecfab](https://github.com/tebaly/core/commit/9cecfab38e7e47b7894be61463c7b0b373635663))
+* Order filter log when the property is invalid ([#3673](https://github.com/tebaly/core/issues/3673)) ([26523ed](https://github.com/tebaly/core/commit/26523ed1100c46bb61266dec3fc0e0716cd4aae8))
+* PHP 8 tests ([9d2244b](https://github.com/tebaly/core/commit/9d2244bee55398cd62951f9fd0d25e4321ec15ae))
+* set stateless to false by default and remove the deprecation ([6806c0e](https://github.com/tebaly/core/commit/6806c0ead278e46d60494256f0c0b667a47bc9d7))
+* simplify PurgeHttpCacheListener ([2b4606f](https://github.com/tebaly/core/commit/2b4606fdb21062e99e3c436ac340c621f470c1a3))
+* subCollection ([993c5f8](https://github.com/tebaly/core/commit/993c5f8b32f02d7d11780ef4a67b2b752bd7641e))
+* support for defaults ([7d2cfbb](https://github.com/tebaly/core/commit/7d2cfbb3766b4fab4fd5789759b1321385c7a855))
+* tests and CS ([46bbf6b](https://github.com/tebaly/core/commit/46bbf6be91eb1e087bd9e014d03f5bfc49c2ce1a))
+* ugly groups ([95d4b1c](https://github.com/tebaly/core/commit/95d4b1cc9b57bd1debcea7387c2af6efdee6cf28))
+* update JS assets ([e057998](https://github.com/tebaly/core/commit/e0579983bcb87c190afcaceced5598af785bafb3))
+* upgrade and fix PHPStan issues ([#3955](https://github.com/tebaly/core/issues/3955)) ([c37641b](https://github.com/tebaly/core/commit/c37641b2d99254c7bd9665f6fb59dc950e20d14c))
+* use getArrayCopy for assertMatchesJsonSchema ([#3807](https://github.com/tebaly/core/issues/3807)) ([1b18bce](https://github.com/tebaly/core/commit/1b18bcee7191d7ffe892291e0a050ee32c03fa65))
+* use new OpenApi with SwaggerUI ([#3657](https://github.com/tebaly/core/issues/3657)) ([f6fd3b3](https://github.com/tebaly/core/commit/f6fd3b371abde8026dd874cf84ed3ab05ce245bb))
+* use validation groups for property metadata in JSON Schema factory ([#3806](https://github.com/tebaly/core/issues/3806)) ([fba4b1a](https://github.com/tebaly/core/commit/fba4b1acb3f1e4ae8e4d6c382b7841f7647897d4))
+* Uuid identifier normalizer should support only strings ([1ce0410](https://github.com/tebaly/core/commit/1ce0410eb2ef52955f2d35a349c05d170cf62d16))
+
 ## 2.6.1
 
 * Fix defaults when using attributes (#3978)
