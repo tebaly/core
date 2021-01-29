@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Core\Bridge\Symfony\Bundle\DependencyInjection;
 
+use ApiPlatform\Core\Annotation\ApiResource;
 use ApiPlatform\Core\Api\FilterInterface;
 use ApiPlatform\Core\Api\UrlGeneratorInterface;
 use ApiPlatform\Core\Bridge\Doctrine\MongoDbOdm\Extension\AggregationCollectionExtensionInterface;
@@ -40,7 +41,6 @@ use ApiPlatform\Core\GraphQl\Type\Definition\TypeInterface as GraphQlTypeInterfa
 use Doctrine\Common\Annotations\Annotation;
 use phpDocumentor\Reflection\DocBlockFactoryInterface;
 use Ramsey\Uuid\Uuid;
-use Symfony\Component\BrowserKit\AbstractBrowser;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Resource\DirectoryResource;
@@ -52,8 +52,8 @@ use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\HttpClient\HttpClientTrait;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
+use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
 use Symfony\Component\Uid\AbstractUid;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Yaml\Yaml;
@@ -108,6 +108,7 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
         $this->registerRouterLoading($container, $config);
         $this->registerMetadataConfiguration($container, $config, $loader);
         $this->registerOAuthConfiguration($container, $config);
+        $this->registerOpenApiConfiguration($container, $config);
         $this->registerSwaggerConfiguration($container, $config, $loader);
         $this->registerJsonApiConfiguration($formats, $loader);
         $this->registerJsonLdHydraConfiguration($container, $formats, $loader, $config['enable_docs']);
@@ -137,14 +138,6 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
             ->addTag('api_platform.subresource_data_provider');
         $container->registerForAutoconfiguration(FilterInterface::class)
             ->addTag('api_platform.filter');
-
-        if ($container->hasParameter('test.client.parameters')) {
-            $loader->load('test.xml');
-
-            if (!class_exists(AbstractBrowser::class) || !trait_exists(HttpClientTrait::class)) {
-                $container->removeDefinition('test.api_platform.client');
-            }
-        }
     }
 
     private function registerCommonConfiguration(ContainerBuilder $container, array $config, XmlFileLoader $loader, array $formats, array $patchFormats, array $errorFormats): void
@@ -219,6 +212,7 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
         if ($config['name_converter']) {
             $container->setAlias('api_platform.name_converter', $config['name_converter']);
         }
+        $container->setParameter('api_platform.asset_package', $config['asset_package']);
         $container->setParameter('api_platform.defaults', $this->normalizeDefaults($config['defaults'] ?? []));
     }
 
@@ -252,21 +246,20 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
 
     private function normalizeDefaults(array $defaults): array
     {
-        $normalizedDefaults = ['attributes' => []];
-        $rootLevelOptions = [
-            'description',
-            'iri',
-            'item_operations',
-            'collection_operations',
-            'graphql',
-        ];
+        $normalizedDefaults = ['attributes' => $defaults['attributes'] ?? []];
+        unset($defaults['attributes']);
 
+        [$publicProperties,] = ApiResource::getConfigMetadata();
+
+        $nameConverter = new CamelCaseToSnakeCaseNameConverter();
         foreach ($defaults as $option => $value) {
-            if (\in_array($option, $rootLevelOptions, true)) {
+            if (isset($publicProperties[$nameConverter->denormalize($option)])) {
                 $normalizedDefaults[$option] = $value;
-            } else {
-                $normalizedDefaults['attributes'][$option] = $value;
+
+                continue;
             }
+
+            $normalizedDefaults['attributes'][$option] = $value;
         }
 
         return $normalizedDefaults;
@@ -534,7 +527,7 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
             return;
         }
 
-        @trigger_error('The "api_platform.metadata_cache" parameter is deprecated since version 2.4 and will have no effect in 3.0.', E_USER_DEPRECATED);
+        @trigger_error('The "api_platform.metadata_cache" parameter is deprecated since version 2.4 and will have no effect in 3.0.', \E_USER_DEPRECATED);
 
         // BC
         if (!$container->getParameter('api_platform.metadata_cache')) {
@@ -731,6 +724,16 @@ final class ApiPlatformExtension extends Extension implements PrependExtensionIn
         if (isset($bundles['SecurityBundle'])) {
             $loader->load('security.xml');
         }
+    }
+
+    private function registerOpenApiConfiguration(ContainerBuilder $container, array $config): void
+    {
+        $container->setParameter('api_platform.openapi.termsOfService', $config['openapi']['termsOfService']);
+        $container->setParameter('api_platform.openapi.contact.name', $config['openapi']['contact']['name']);
+        $container->setParameter('api_platform.openapi.contact.url', $config['openapi']['contact']['url']);
+        $container->setParameter('api_platform.openapi.contact.email', $config['openapi']['contact']['email']);
+        $container->setParameter('api_platform.openapi.license.name', $config['openapi']['license']['name']);
+        $container->setParameter('api_platform.openapi.license.url', $config['openapi']['license']['url']);
     }
 
     private function buildDeprecationArgs(string $version, string $message): array

@@ -70,6 +70,25 @@ class ContextBuilderTest extends TestCase
         $this->assertEquals($expected, $contextBuilder->getResourceContext($this->entityClass));
     }
 
+    public function testIriOnlyResourceContext()
+    {
+        $this->resourceMetadataFactoryProphecy->create($this->entityClass)->willReturn(new ResourceMetadata('DummyEntity', null, null, null, null, ['normalization_context' => ['iri_only' => true]]));
+        $this->propertyNameCollectionFactoryProphecy->create($this->entityClass)->willReturn(new PropertyNameCollection(['dummyPropertyA']));
+        $this->propertyMetadataFactoryProphecy->create($this->entityClass, 'dummyPropertyA')->willReturn(new PropertyMetadata(new Type(Type::BUILTIN_TYPE_STRING), 'Dummy property A', true, true, true, true, false, false));
+
+        $contextBuilder = new ContextBuilder($this->resourceNameCollectionFactoryProphecy->reveal(), $this->resourceMetadataFactoryProphecy->reveal(), $this->propertyNameCollectionFactoryProphecy->reveal(), $this->propertyMetadataFactoryProphecy->reveal(), $this->urlGeneratorProphecy->reveal());
+
+        $expected = [
+            '@vocab' => '#',
+            'hydra' => 'http://www.w3.org/ns/hydra/core#',
+            'hydra:member' => [
+                '@type' => '@id',
+            ],
+        ];
+
+        $this->assertEquals($expected, $contextBuilder->getResourceContext($this->entityClass));
+    }
+
     public function testResourceContextWithJsonldContext()
     {
         $this->resourceMetadataFactoryProphecy->create($this->entityClass)->willReturn(new ResourceMetadata('DummyEntity'));
@@ -196,5 +215,23 @@ class ContextBuilderTest extends TestCase
         ];
 
         $this->assertEquals($expected, $contextBuilder->getAnonymousResourceContext($output, ['iri' => '/dummies', 'name' => 'Dummy', 'api_resource' => new Dummy()]));
+    }
+
+    public function testAnonymousResourceContextWithApiResourceHavingContext()
+    {
+        $output = new OutputDto();
+        $this->propertyNameCollectionFactoryProphecy->create(OutputDto::class)->willReturn(new PropertyNameCollection(['dummyPropertyA']));
+        $this->propertyMetadataFactoryProphecy->create(OutputDto::class, 'dummyPropertyA')->willReturn(new PropertyMetadata(new Type(Type::BUILTIN_TYPE_STRING), 'Dummy property A', true, true, true, true, false, false, null, null, []));
+
+        $this->resourceMetadataFactoryProphecy->create(Dummy::class)->willReturn(new ResourceMetadata('Dummy'));
+
+        $contextBuilder = new ContextBuilder($this->resourceNameCollectionFactoryProphecy->reveal(), $this->resourceMetadataFactoryProphecy->reveal(), $this->propertyNameCollectionFactoryProphecy->reveal(), $this->propertyMetadataFactoryProphecy->reveal(), $this->urlGeneratorProphecy->reveal());
+
+        $expected = [
+            '@id' => '/dummies',
+            '@type' => 'Dummy',
+        ];
+
+        $this->assertEquals($expected, $contextBuilder->getAnonymousResourceContext($output, ['iri' => '/dummies', 'name' => 'Dummy', 'api_resource' => new Dummy(), 'has_context' => true]));
     }
 }

@@ -29,6 +29,8 @@ use Symfony\Component\Yaml\Yaml;
  */
 final class OpenApiCommand extends Command
 {
+    protected static $defaultName = 'api:openapi:export';
+
     private $openApiFactory;
     private $normalizer;
 
@@ -45,7 +47,6 @@ final class OpenApiCommand extends Command
     protected function configure()
     {
         $this
-            ->setName('api:openapi:export')
             ->setDescription('Dump the Open API documentation')
             ->addOption('yaml', 'y', InputOption::VALUE_NONE, 'Dump the documentation in YAML')
             ->addOption('output', 'o', InputOption::VALUE_OPTIONAL, 'Write output to file')
@@ -76,7 +77,7 @@ final class OpenApiCommand extends Command
         $data = $this->normalizer->normalize($this->openApiFactory->__invoke(), 'json');
         $content = $input->getOption('yaml')
             ? Yaml::dump($data, 10, 2, Yaml::DUMP_OBJECT_AS_MAP | Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE | Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK)
-            : (json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '');
+            : (json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES) ?: '');
 
         $filename = $input->getOption('output');
         if ($filename && \is_string($filename)) {

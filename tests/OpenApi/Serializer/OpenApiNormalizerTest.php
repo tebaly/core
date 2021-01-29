@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Core\Tests\OpenApi\Serializer;
 
+use ApiPlatform\Core\Api\IdentifiersExtractorInterface;
 use ApiPlatform\Core\DataProvider\PaginationOptions;
 use ApiPlatform\Core\JsonSchema\SchemaFactory;
 use ApiPlatform\Core\JsonSchema\TypeFactory;
@@ -68,7 +69,7 @@ class OpenApiNormalizerTest extends TestCase
             ],
             [
                 'get' => ['method' => 'GET'] + self::OPERATION_FORMATS,
-                'post' => ['method' => 'POST'] + self::OPERATION_FORMATS,
+                'post' => ['method' => 'POST', 'openapi_context' => ['security' => [], 'servers' => ['url' => '/test']]] + self::OPERATION_FORMATS,
             ],
             []
         );
@@ -95,6 +96,9 @@ class OpenApiNormalizerTest extends TestCase
         $schemaFactory = new SchemaFactory($typeFactory, $resourceMetadataFactory, $propertyNameCollectionFactory, $propertyMetadataFactory, new CamelCaseToSnakeCaseNameConverter());
         $typeFactory->setSchemaFactory($schemaFactory);
 
+        $identifiersExtractorProphecy = $this->prophesize(IdentifiersExtractorInterface::class);
+        $identifiersExtractorProphecy->getIdentifiersFromResourceClass(Argument::type('string'))->willReturn(['id']);
+
         $factory = new OpenApiFactory(
             $resourceNameCollectionFactoryProphecy->reveal(),
             $resourceMetadataFactory,
@@ -105,6 +109,7 @@ class OpenApiNormalizerTest extends TestCase
             $operationPathResolver,
             $filterLocatorProphecy->reveal(),
             $subresourceOperationFactoryProphecy->reveal(),
+            $identifiersExtractorProphecy->reveal(),
             [],
             new Options('Test API', 'This is a test API.', '1.2.3', true, 'oauth2', 'authorizationCode', '/oauth/v2/token', '/oauth/v2/auth', '/oauth/v2/refresh', ['scope param'], [
                 'header' => [
@@ -154,5 +159,11 @@ class OpenApiNormalizerTest extends TestCase
         $this->assertArrayNotHasKey('termsOfService', $openApiAsArray['info']);
         $this->assertArrayNotHasKey('paths', $openApiAsArray['paths']);
         $this->assertArrayHasKey('/dummies/{id}', $openApiAsArray['paths']);
+        $this->assertArrayNotHasKey('servers', $openApiAsArray['paths']['/dummies/{id}']['get']);
+        $this->assertArrayNotHasKey('security', $openApiAsArray['paths']['/dummies/{id}']['get']);
+
+        // Security can be disabled per-operation using an empty array
+        $this->assertEquals([], $openApiAsArray['paths']['/dummies']['post']['security']);
+        $this->assertEquals(['url' => '/test'], $openApiAsArray['paths']['/dummies']['post']['servers']);
     }
 }

@@ -29,7 +29,7 @@ final class AnnotationResourceMetadataFactory implements ResourceMetadataFactory
     private $decorated;
     private $defaults;
 
-    public function __construct(Reader $reader, ResourceMetadataFactoryInterface $decorated = null, array $defaults = [])
+    public function __construct(Reader $reader = null, ResourceMetadataFactoryInterface $decorated = null, array $defaults = [])
     {
         $this->reader = $reader;
         $this->decorated = $decorated;
@@ -56,6 +56,14 @@ final class AnnotationResourceMetadataFactory implements ResourceMetadataFactory
             return $this->handleNotFound($parentResourceMetadata, $resourceClass);
         }
 
+        if (\PHP_VERSION_ID >= 80000 && $attributes = $reflectionClass->getAttributes(ApiResource::class)) {
+            return $this->createMetadata($attributes[0]->newInstance(), $parentResourceMetadata);
+        }
+
+        if (null === $this->reader) {
+            $this->handleNotFound($parentResourceMetadata, $resourceClass);
+        }
+
         $resourceAnnotation = $this->reader->getClassAnnotation($reflectionClass, ApiResource::class);
         if (!$resourceAnnotation instanceof ApiResource) {
             return $this->handleNotFound($parentResourceMetadata, $resourceClass);
@@ -80,7 +88,15 @@ final class AnnotationResourceMetadataFactory implements ResourceMetadataFactory
 
     private function createMetadata(ApiResource $annotation, ResourceMetadata $parentResourceMetadata = null): ResourceMetadata
     {
-        $attributes = (null === $annotation->attributes && [] === $this->defaults['attributes']) ? null : (array) $annotation->attributes + $this->defaults['attributes'];
+        $attributes = null;
+        if (null !== $annotation->attributes || [] !== $this->defaults['attributes']) {
+            $attributes = (array) $annotation->attributes;
+            foreach ($this->defaults['attributes'] as $key => $value) {
+                if (!isset($attributes[$key])) {
+                    $attributes[$key] = $value;
+                }
+            }
+        }
 
         if (!$parentResourceMetadata) {
             return new ResourceMetadata(

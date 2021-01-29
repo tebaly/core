@@ -63,7 +63,7 @@ class OpenApiCommandTest extends KernelTestCase
         - DummyCar
 YAML;
 
-        $this->assertStringContainsString(str_replace(PHP_EOL, "\n", $expected), $result, 'nested object should be present.');
+        $this->assertStringContainsString(str_replace(\PHP_EOL, "\n", $expected), $result, 'nested object should be present.');
 
         $expected = <<<YAML
   '/dummy_cars/{id}':
@@ -72,18 +72,22 @@ YAML;
       tags: []
 YAML;
 
-        $this->assertStringContainsString(str_replace(PHP_EOL, "\n", $expected), $result, 'arrays should be correctly formatted.');
+        $this->assertStringContainsString(str_replace(\PHP_EOL, "\n", $expected), $result, 'arrays should be correctly formatted.');
         $this->assertStringContainsString('openapi: '.OpenApi::VERSION, $result);
 
         $expected = <<<YAML
 info:
   title: 'My Dummy API'
-  description: |
+YAML;
+        $this->assertStringContainsString(str_replace(\PHP_EOL, "\n", $expected), $result, 'multiline formatting must be preserved (using literal style).');
+
+        $expected = <<<YAML
     This is a test API.
     Made with love
   version: 0.0.0
 YAML;
-        $this->assertStringContainsString(str_replace(PHP_EOL, "\n", $expected), $result, 'multiline formatting must be preserved (using literal style).');
+
+        $this->assertStringContainsString(str_replace(\PHP_EOL, "\n", $expected), $result);
     }
 
     public function testWriteToFile()

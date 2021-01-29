@@ -51,14 +51,14 @@ final class DocumentationAction
         $this->openApiFactory = $openApiFactory;
 
         if (null === $openApiFactory) {
-            @trigger_error(sprintf('Not passing an instance of "%s" as 7th parameter of the constructor of "%s" is deprecated since API Platform 2.6', OpenApiFactoryInterface::class, __CLASS__), E_USER_DEPRECATED);
+            @trigger_error(sprintf('Not passing an instance of "%s" as 7th parameter of the constructor of "%s" is deprecated since API Platform 2.6', OpenApiFactoryInterface::class, __CLASS__), \E_USER_DEPRECATED);
         }
 
         if (null === $formatsProvider) {
             return;
         }
 
-        @trigger_error(sprintf('Passing an array or an instance of "%s" as 5th parameter of the constructor of "%s" is deprecated since API Platform 2.5', FormatsProviderInterface::class, __CLASS__), E_USER_DEPRECATED);
+        @trigger_error(sprintf('Passing an array or an instance of "%s" as 5th parameter of the constructor of "%s" is deprecated since API Platform 2.5', FormatsProviderInterface::class, __CLASS__), \E_USER_DEPRECATED);
         if (\is_array($formatsProvider)) {
             $this->formats = $formatsProvider;
 
@@ -85,7 +85,7 @@ final class DocumentationAction
             $this->formats = $this->formatsProvider->getFormatsFromAttributes($attributes ?? []);
         }
 
-        if (null !== $this->openApiFactory && isset($context) && 3 === $context['spec_version']) {
+        if ('json' === $request->getRequestFormat() && null !== $this->openApiFactory && 3 === ($context['spec_version'] ?? null)) {
             return $this->openApiFactory->__invoke($context ?? []);
         }
 

@@ -16,6 +16,7 @@ namespace ApiPlatform\Core\Tests\Bridge\Symfony\Bundle\DataPersister;
 use ApiPlatform\Core\Bridge\Symfony\Bundle\DataPersister\TraceableChainDataPersister;
 use ApiPlatform\Core\DataPersister\ChainDataPersister;
 use ApiPlatform\Core\DataPersister\DataPersisterInterface;
+use ApiPlatform\Core\DataPersister\ResumableDataPersisterInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -32,8 +33,12 @@ class TraceableChainDataPersisterTest extends TestCase
         $result = $dataPersister->getPersistersResponse();
         $this->assertCount(\count($expected), $result);
         $this->assertEmpty(array_filter($result, function ($key) {
+            if (\PHP_VERSION_ID >= 80000) {
+                return !str_starts_with($key, DataPersisterInterface::class.'@anonymous');
+            }
+
             return 0 !== strpos($key, 'class@anonymous');
-        }, ARRAY_FILTER_USE_KEY));
+        }, \ARRAY_FILTER_USE_KEY));
         $this->assertSame($expected, array_values($result));
     }
 
@@ -46,9 +51,24 @@ class TraceableChainDataPersisterTest extends TestCase
         $result = $dataPersister->getPersistersResponse();
         $this->assertCount(\count($expected), $result);
         $this->assertEmpty(array_filter($result, function ($key) {
+            if (\PHP_VERSION_ID >= 80000) {
+                return !str_starts_with($key, DataPersisterInterface::class.'@anonymous');
+            }
+
             return 0 !== strpos($key, 'class@anonymous');
-        }, ARRAY_FILTER_USE_KEY));
+        }, \ARRAY_FILTER_USE_KEY));
         $this->assertSame($expected, array_values($result));
+    }
+
+    public function testSupports()
+    {
+        $context = ['ok' => true];
+        $persister = $this->prophesize(DataPersisterInterface::class);
+        $persister->supports('', $context)->willReturn(true)->shouldBeCalled();
+        $chain = new ChainDataPersister([$persister->reveal()]);
+        $persister->persist('', $context)->shouldBeCalled();
+        $dataPersister = new TraceableChainDataPersister($chain);
+        $dataPersister->persist('', $context);
     }
 
     public function dataPersisterProvider(): iterable
@@ -103,7 +123,60 @@ class TraceableChainDataPersisterTest extends TestCase
                     }
                 },
             ]),
-            [false, true, null],
+            [false, true, false],
+        ];
+
+        yield [
+            new ChainDataPersister([
+                new class() implements DataPersisterInterface, ResumableDataPersisterInterface {
+                    public function supports($data): bool
+                    {
+                        return true;
+                    }
+
+                    public function resumable(array $context = []): bool
+                    {
+                        return true;
+                    }
+
+                    public function persist($data)
+                    {
+                    }
+
+                    public function remove($data)
+                    {
+                    }
+                },
+                new class() implements DataPersisterInterface {
+                    public function supports($data): bool
+                    {
+                        return false;
+                    }
+
+                    public function persist($data)
+                    {
+                    }
+
+                    public function remove($data)
+                    {
+                    }
+                },
+                new class() implements DataPersisterInterface {
+                    public function supports($data): bool
+                    {
+                        return true;
+                    }
+
+                    public function persist($data)
+                    {
+                    }
+
+                    public function remove($data)
+                    {
+                    }
+                },
+            ]),
+            [true, false, true],
         ];
     }
 }

@@ -41,6 +41,8 @@ use Symfony\Component\Serializer\SerializerInterface;
  */
 final class PublishMercureUpdatesListener
 {
+    use DispatchTrait;
+    use ResourceClassInfoTrait;
     private const ALLOWED_KEYS = [
         'topics' => true,
         'data' => true,
@@ -48,10 +50,8 @@ final class PublishMercureUpdatesListener
         'id' => true,
         'type' => true,
         'retry' => true,
+        'normalization_context' => true,
     ];
-
-    use DispatchTrait;
-    use ResourceClassInfoTrait;
 
     private $iriConverter;
     private $serializer;
@@ -80,7 +80,7 @@ final class PublishMercureUpdatesListener
         $this->formats = $formats;
         $this->messageBus = $messageBus;
         $this->publisher = $publisher;
-        $this->expressionLanguage = $expressionLanguage ?? class_exists(ExpressionLanguage::class) ? new ExpressionLanguage() : null;
+        $this->expressionLanguage = $expressionLanguage ?? (class_exists(ExpressionLanguage::class) ? new ExpressionLanguage() : null);
         $this->graphQlSubscriptionManager = $graphQlSubscriptionManager;
         $this->graphQlMercureSubscriptionIriGenerator = $graphQlMercureSubscriptionIriGenerator;
         $this->reset();
@@ -154,9 +154,6 @@ final class PublishMercureUpdatesListener
         }
 
         $options = $this->resourceMetadataFactory->create($resourceClass)->getAttribute('mercure', false);
-        if (false === $options) {
-            return;
-        }
 
         if (\is_string($options)) {
             if (null === $this->expressionLanguage) {
@@ -164,6 +161,10 @@ final class PublishMercureUpdatesListener
             }
 
             $options = $this->expressionLanguage->evaluate($options, ['object' => $object]);
+        }
+
+        if (false === $options) {
+            return;
         }
 
         if (true === $options) {
@@ -180,7 +181,7 @@ final class PublishMercureUpdatesListener
                     throw new \InvalidArgumentException('Targets do not exist anymore since Mercure 0.10. Mark the update as private instead or downgrade the Mercure Component to version 0.3');
                 }
 
-                @trigger_error('Targets do not exist anymore since Mercure 0.10. Mark the update as private instead.', E_USER_DEPRECATED);
+                @trigger_error('Targets do not exist anymore since Mercure 0.10. Mark the update as private instead.', \E_USER_DEPRECATED);
                 break;
             }
 
@@ -215,7 +216,7 @@ final class PublishMercureUpdatesListener
             $data = $options['data'] ?? json_encode(['@id' => $object->id]);
         } else {
             $resourceClass = $this->getObjectClass($object);
-            $context = $this->resourceMetadataFactory->create($resourceClass)->getAttribute('normalization_context', []);
+            $context = $options['normalization_context'] ?? $this->resourceMetadataFactory->create($resourceClass)->getAttribute('normalization_context', []);
 
             $iri = $options['topics'] ?? $this->iriConverter->getIriFromItem($object, UrlGeneratorInterface::ABS_URL);
             $data = $options['data'] ?? $this->serializer->serialize($object, key($this->formats), $context);
@@ -253,7 +254,10 @@ final class PublishMercureUpdatesListener
         return $updates;
     }
 
-    private function buildUpdate(string $iri, string $data, array $options): Update
+    /**
+     * @param string|string[] $iri
+     */
+    private function buildUpdate($iri, string $data, array $options): Update
     {
         if (method_exists(Update::class, 'isPrivate')) {
             return new Update($iri, $data, $options['private'] ?? false, $options['id'] ?? null, $options['type'] ?? null, $options['retry'] ?? null);
