@@ -30,6 +30,10 @@
         </service>
 
         <service id="api_platform.route_loader" class="ApiPlatform\Core\Bridge\Symfony\Routing\Loader\ApiLoader" public="false">
+            <tag name="routing.loader" />
+        </service>
+
+        <service id="ApiPlatform\Core\Bridge\Symfony\Routing\Loader\ExternalFilesAutoloader">
             <argument type="service" id="kernel" />
             <argument>%api_platform.formats%</argument>
             <argument>%api_platform.graphql.enabled%</argument>
