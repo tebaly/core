@@ -82,7 +82,77 @@ final class ApiLoader extends Loader
     /**
      * {@inheritdoc}
      */
+    public function load($data, $type = null): RouteCollection
+    {
+        $routeCollection = new RouteCollection();
+        foreach ($this->resourceClassDirectories as $directory) {
+            $routeCollection->addResource(new DirectoryResource($directory, '/\.php$/'));
+        }
 
+        $this->loadExternalFiles($routeCollection);
+
+        foreach ($this->resourceNameCollectionFactory->create() as $resourceClass) {
+            $resourceMetadata = $this->resourceMetadataFactory->create($resourceClass);
+            $resourceShortName = $resourceMetadata->getShortName();
+
+            if (null === $resourceShortName) {
+                throw new InvalidResourceException(sprintf('Resource %s has no short name defined.', $resourceClass));
+            }
+
+            if (null !== $collectionOperations = $resourceMetadata->getCollectionOperations()) {
+                foreach ($collectionOperations as $operationName => $operation) {
+                    $this->addRoute($routeCollection, $resourceClass, $operationName, $operation, $resourceMetadata, OperationType::COLLECTION);
+                }
+            }
+
+            if (null !== $itemOperations = $resourceMetadata->getItemOperations()) {
+                foreach ($itemOperations as $operationName => $operation) {
+                    $this->addRoute($routeCollection, $resourceClass, $operationName, $operation, $resourceMetadata, OperationType::ITEM);
+                }
+            }
+
+            if (null === $this->subresourceOperationFactory) {
+                continue;
+            }
+
+            foreach ($this->subresourceOperationFactory->create($resourceClass) as $operationId => $operation) {
+                if (null === $controller = $operation['controller'] ?? null) {
+                    $controller = self::DEFAULT_ACTION_PATTERN.'get_subresource';
+
+                    if (!$this->container->has($controller)) {
+                        throw new RuntimeException(sprintf('There is no builtin action for the %s %s operation. You need to define the controller yourself.', OperationType::SUBRESOURCE, 'GET'));
+                    }
+                }
+
+                $routeCollection->add($operation['route_name'], new Route(
+                    $operation['path'],
+                    [
+                        '_controller' => $controller,
+                        '_format' => null,
+                        '_stateless' => $operation['stateless'] ?? $resourceMetadata->getAttribute('stateless'),
+                        '_api_resource_class' => $operation['resource_class'],
+                        '_api_identifiers' => $operation['identifiers'],
+                        '_api_has_composite_identifier' => false,
+                        '_api_subresource_operation_name' => $operation['route_name'],
+                        '_api_subresource_context' => [
+                            'property' => $operation['property'],
+                            'identifiers' => $operation['identifiers'],
+                            'collection' => $operation['collection'],
+                            'operationId' => $operationId,
+                        ],
+                    ] + ($operation['defaults'] ?? []),
+                    $operation['requirements'] ?? [],
+                    $operation['options'] ?? [],
+                    $operation['host'] ?? '',
+                    $operation['schemes'] ?? [],
+                    ['GET'],
+                    $operation['condition'] ?? ''
+                ));
+            }
+        }
+
+        return $routeCollection;
+    }
 
     /**
      * {@inheritdoc}
@@ -95,12 +165,97 @@ final class ApiLoader extends Loader
     /**
      * Load external files.
      */
+    private function loadExternalFiles(RouteCollection $routeCollection): void
+    {
+        if ($this->entrypointEnabled) {
+            $routeCollection->addCollection($this->fileLoader->load('api.xml'));
+        }
 
+        if ($this->docsEnabled) {
+            $routeCollection->addCollection($this->fileLoader->load('docs.xml'));
+        }
+
+        if ($this->graphqlEnabled) {
+            $graphqlCollection = $this->fileLoader->load('graphql/graphql.xml');
+            $graphqlCollection->addDefaults(['_graphql' => true]);
+            $routeCollection->addCollection($graphqlCollection);
+        }
+
+        if ($this->graphiQlEnabled) {
+            $graphiQlCollection = $this->fileLoader->load('graphql/graphiql.xml');
+            $graphiQlCollection->addDefaults(['_graphql' => true]);
+            $routeCollection->addCollection($graphiQlCollection);
+        }
+
+        if ($this->graphQlPlaygroundEnabled) {
+            $graphQlPlaygroundCollection = $this->fileLoader->load('graphql/graphql_playground.xml');
+            $graphQlPlaygroundCollection->addDefaults(['_graphql' => true]);
+            $routeCollection->addCollection($graphQlPlaygroundCollection);
+        }
+
+        if (isset($this->formats['jsonld'])) {
+            $routeCollection->addCollection($this->fileLoader->load('jsonld.xml'));
+        }
+    }
 
     /**
      * Creates and adds a route for the given operation to the route collection.
      *
      * @throws RuntimeException
      */
+    private function addRoute(RouteCollection $routeCollection, string $resourceClass, string $operationName, array $operation, ResourceMetadata $resourceMetadata, string $operationType): void
+    {
+        $resourceShortName = $resourceMetadata->getShortName();
 
+        if (isset($operation['route_name'])) {
+            if (!isset($operation['method'])) {
+                @trigger_error(sprintf('Not setting the "method" attribute is deprecated and will not be supported anymore in API Platform 3.0, set it for the %s operation "%s" of the class "%s".', OperationType::COLLECTION === $operationType ? 'collection' : 'item', $operationName, $resourceClass), \E_USER_DEPRECATED);
+            }
+
+            return;
+        }
+
+        if (!isset($operation['method'])) {
+            throw new RuntimeException(sprintf('Either a "route_name" or a "method" operation attribute must exist for the operation "%s" of the resource "%s".', $operationName, $resourceClass));
+        }
+
+        if (null === $controller = $operation['controller'] ?? null) {
+            $controller = sprintf('%s%s_%s', self::DEFAULT_ACTION_PATTERN, strtolower($operation['method']), $operationType);
+
+            if (!$this->container->has($controller)) {
+                throw new RuntimeException(sprintf('There is no builtin action for the %s %s operation. You need to define the controller yourself.', $operationType, $operation['method']));
+            }
+        }
+
+        if ($resourceMetadata->getItemOperations()) {
+            $operation['identifiers'] = (array) ($operation['identifiers'] ?? $resourceMetadata->getAttribute('identifiers', $this->identifiersExtractor ? $this->identifiersExtractor->getIdentifiersFromResourceClass($resourceClass) : ['id']));
+        } else {
+            $operation['identifiers'] = $operation['identifiers'] ?? [];
+        }
+
+        $operation['has_composite_identifier'] = \count($operation['identifiers']) > 1 ? $resourceMetadata->getAttribute('composite_identifier', true) : false;
+        $path = trim(trim($resourceMetadata->getAttribute('route_prefix', '')), '/');
+        $path .= $this->operationPathResolver->resolveOperationPath($resourceShortName, $operation, $operationType, $operationName);
+
+        $route = new Route(
+            $path,
+            [
+                '_controller' => $controller,
+                '_format' => null,
+                '_stateless' => $operation['stateless'],
+                '_api_resource_class' => $resourceClass,
+                '_api_identifiers' => $operation['identifiers'],
+                '_api_has_composite_identifier' => $operation['has_composite_identifier'],
+                sprintf('_api_%s_operation_name', $operationType) => $operationName,
+            ] + ($operation['defaults'] ?? []),
+            $operation['requirements'] ?? [],
+            $operation['options'] ?? [],
+            $operation['host'] ?? '',
+            $operation['schemes'] ?? [],
+            [$operation['method']],
+            $operation['condition'] ?? ''
+        );
+
+        $routeCollection->add(RouteNameGenerator::generate($operationName, $resourceShortName, $operationType), $route);
+    }
 }
